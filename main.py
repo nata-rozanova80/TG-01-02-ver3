@@ -3,13 +3,14 @@
 #import os
 import asyncio
 #import requests
-from aiogram import Bot, Dispatcher, F
+from aiogram import Bot, Dispatcher, F, types
 from aiogram.filters import CommandStart, Command
 from aiogram import Router
 from aiogram.types import Message
 #from aiogram.utils import start_polling
 
 from config import TOKEN
+import random
 
 # Инициализация бота и маршрутизатора
 bot = Bot(token=TOKEN)
@@ -21,6 +22,19 @@ dp = Dispatcher()
 
 
 
+@dp.message(Command('photo'))
+async def photo(message: Message):
+    list = ['https://isrscience.ru/wp-content/uploads/2019/11/Very_tall_trees_02.jpg', 'https://notivory.com/upload/medialibrary/3ed/3edf3e212c5f4cf1662cbfc44cab2fea.jpg']
+    rand_photo = random.choice(list)
+    await message.answer_photo(photo=rand_photo, caption='Это супер крутая картинка')
+
+
+@dp.message(F.photo)
+async def react_photo(message: Message):
+    list = ['Ого, какая фотка!', 'Непонятно, что это такое', 'Не отправляй мне такое больше']
+    rand_answ = random.choice(list)
+    await message.answer(rand_answ)
+    await bot.download(message.photo[-1], destination=f'img/{message.photo[-1].file_id}.jpg')
 
 
 @dp.message(F.text == "Что такое ИИ?")
@@ -32,9 +46,9 @@ async def help(message: Message):
     await message.answer('Этот бот умеет выполнять команды: \n /start \n /help')
 
 
-@dp.message(CommandStart())
-async def start(message: Message):
-    await message.answer('Привет! Я маленький бот.')
+# @dp.message(CommandStart())
+# async def start(message: Message):
+#     await message.answer('Привет! Я маленький бот.')
 
 # def get_weather(city: str) -> str:
 #     url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={WEATHER_API_KEY}&units=metric"
@@ -54,7 +68,13 @@ async def start(message: Message):
 #     weather_info = get_weather(CITY)
 #     await message.answer(weather_info)
 
+@dp.message(CommandStart())
+async def start(message: Message):
+    await message.answer(f'Селеметсiз бе, {message.from_user.first_name}')
 
+@dp.message()
+async def startall(message: Message):
+    await message.answer("Я тебе ответил")
 
 async def main():
     await dp.start_polling(bot)
