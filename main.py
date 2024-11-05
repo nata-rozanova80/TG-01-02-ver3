@@ -1,12 +1,13 @@
 # @TG01wetherbot or tg01bot
 
-#import os
+import os
+from gtts import gTTS
 import asyncio
 #import requests
 from aiogram import Bot, Dispatcher, F, types
 from aiogram.filters import CommandStart, Command
-from aiogram import Router
-from aiogram.types import Message
+from googletrans import Translator
+from aiogram.types import Message, FSInputFile
 #from aiogram.utils import start_polling
 
 from config import TOKEN
@@ -19,7 +20,52 @@ dp = Dispatcher()
 # WEATHER_API_KEY = '18296f86db52c8ed138347556f734ec2'  # Замените на ваш ключ API для погоды
 # CITY = 'Moscow'  # Замените на нужный город
 
+@dp.message(Command('translate'))
+async def translate(message: Message):
+    trans_text = ['текст какой-то']
+    # await message.answer(voice)
+    tts = gTTS(text=trans_text, lang='en')
+    tts.save("text_to_tras.mp3")
+    audio = FSInputFile("text_to_tras.mp3")
+    await bot.send_audio(message.chat.id, audio)
+    os.remove("text_to_tras.mp3")
 
+
+translator = Translator()
+
+
+@dp.message(Command('translate'))
+async def translate(message: Message):
+    # Получаем текст сообщения от пользователя, убираем команду '/translate'
+    text_to_translate = message.text.removeprefix('/translate').strip()
+
+    if not text_to_translate:
+        await message.reply("Пожалуйста, укажите текст для перевода после команды.")
+        return
+
+    # Переводим текст на английский
+    translated = translator.translate(text_to_translate, dest='en')
+    trans_text = translated.text
+    await bot.send_chat_action(message.chat.id, 'upload_video')
+
+    # Создаем аудиофайл из переведенного текста
+    with open('output_file.mp3', 'wb') as f:
+        tts = gTTS(text=trans_text, lang='en')
+        tts.write_to_fp(f)
+        #tts.save("text_to_translate.mp3")
+
+    # Отправляем аудиофайл
+    audio = FSInputFile("text_to_translate.mp3")
+    await bot.send_audio(message.chat.id, audio)
+
+    # Удаляем временный аудиофайл
+    os.remove("text_to_translate.mp3")
+
+
+@dp.message(Command('voice'))
+async def voice(message: Message):
+    voice = FSInputFile("1.ogg")
+    await message.answer_voice(voice)
 
 
 @dp.message(Command('photo'))
@@ -46,27 +92,7 @@ async def help(message: Message):
     await message.answer('Этот бот умеет выполнять команды: \n /start \n /help')
 
 
-# @dp.message(CommandStart())
-# async def start(message: Message):
-#     await message.answer('Привет! Я маленький бот.')
 
-# def get_weather(city: str) -> str:
-#     url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={WEATHER_API_KEY}&units=metric"
-#     response = requests.get(url)
-#     data = response.json()
-#
-#     if response.status_code == 200:
-#         temperature = data['main']['temp']
-#         description = data['weather'][0]['description']
-#         return f"Температура в {city}: {temperature}°C, {description}."
-#     else:
-#         return "Город не найден."
-#
-#
-# @router.message(Command("weather"))
-# async def weather_command(message: types.Message):
-#     weather_info = get_weather(CITY)
-#     await message.answer(weather_info)
 
 @dp.message(CommandStart())
 async def start(message: Message):
